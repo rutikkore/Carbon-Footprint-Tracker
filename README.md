@@ -141,16 +141,4 @@ Submit a pull request
 📄 License
 This project is open source and available under the MIT License.
 
-🆘 Support
-If you encounter any issues:
 
-Check the console for error messages
-Ensure all dependencies are installed
-Verify Python version compatibility
-Check file permissions for database creation
-🎉 Acknowledgments
-CO₂ emission factors based on EPA and IPCC guidelines
-Bootstrap for responsive design framework
-Chart.js for beautiful data visualizations
-Font Awesome for comprehensive icon library
-Start your journey toward a sustainable future today! 🌱
