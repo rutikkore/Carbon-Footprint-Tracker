@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Carbon Footprint Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-tachometer-alt text-success"></i> 
+            Welcome back, {{ current_user.name }}!
+        </h1>
+        <p class="lead text-muted">Here's your environmental impact overview</p>
+    </div>
+</div>
+
+<!-- Daily Eco Tip -->
+<div class="eco-tip">
+    <h5><i class="fas fa-lightbulb text-warning"></i> Today's Eco Tip</h5>
+    <p class="mb-0">{{ daily_tip }}</p>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-4 mb-5">
+    <div class="col-md-4">
+        <div class="stats-card">
+            <i class="fas fa-smog mb-3" style="font-size: 2rem;"></i>
+            <h3 class="mb-0">{{ total_emissions }} kg</h3>
+            <p class="mb-0">Total CO₂ Emitted</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <i class="fas fa-star mb-3" style="font-size: 2rem;"></i>
+            <h3 class="mb-0">{{ green_score }}</h3>
+            <p class="mb-0">Green Score</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stats-card">
+            <i class="fas fa-seedling mb-3" style="font-size: 2rem;"></i>
+            <h3 class="mb-0">{{ trees_needed }}</h3>
+            <p class="mb-0">Trees to Offset ({{ tree_absorption }} kg CO₂/yr each)</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-5">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie text-primary"></i> 
+                    Emissions by Category
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line text-success"></i> 
+                    Weekly Trend
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Badges -->
+{% if badges %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy text-warning"></i> 
+                    Recent Achievements
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for badge in badges[:3] %}
+                    <div class="col-md-4">
+                        <div class="badge-custom text-center">
+                            {% if 'Gold' in badge.badge_name %}
+                                <i class="fas fa-medal text-warning"></i>
+                            {% elif 'Silver' in badge.badge_name %}
+                                <i class="fas fa-medal text-secondary"></i>
+                            {% else %}
+                                <i class="fas fa-medal text-info"></i>
+                            {% endif %}
+                            {{ badge.badge_name }}
+                            <br><small>{{ badge.date_earned.strftime('%b %d') }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt text-primary"></i> 
+                    Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('calculator') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-calculator"></i><br>
+                            Log Activities
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-history"></i><br>
+                            View History
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('leaderboard') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-trophy"></i><br>
+                            Leaderboard
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('profile') }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-user-cog"></i><br>
+                            Settings
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Pie Chart for Emissions by Category
+const pieCtx = document.getElementById('pieChart').getContext('2d');
+const categoryData = {{ category_emissions|tojson }};
+
+const pieLabels = categoryData.map(item => item.category);
+const pieValues = categoryData.map(item => item.total);
+
+new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+        labels: pieLabels,
+        datasets: [{
+            data: pieValues,
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF',
+                '#FF9F40'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed.toFixed(2) + ' kg CO₂';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Line Chart for Weekly Trend
+const lineCtx = document.getElementById('lineChart').getContext('2d');
+const weeklyData = {{ weekly_data|tojson }};
+
+const lineLabels = weeklyData.map(item => {
+    const date = new Date(item.emission_date);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+});
+const lineValues = weeklyData.map(item => item.daily_total);
+
+new Chart(lineCtx, {
+    type: 'line',
+    data: {
+        labels: lineLabels,
+        datasets: [{
+            label: 'Daily Emissions (kg CO₂)',
+            data: lineValues,
+            borderColor: '#28a745',
+            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: '#28a745',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                callbacks: {
+                    label: function(context) {
+                        return 'Emissions: ' + context.parsed.y.toFixed(2) + ' kg CO₂';
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Date'
+                },
+                grid: {
+                    display: false
+                }
+            },
+            y: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'CO₂ Emissions (kg)'
+                },
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0,0,0,0.1)'
+                }
+            }
+        },
+        interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+        }
+    }
+});
+</script>
+{% endblock %}

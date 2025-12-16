@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Carbon Calculator - Carbon Footprint Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-calculator text-primary"></i> 
+            Carbon Footprint Calculator
+        </h1>
+        <p class="lead text-muted">Log your daily activities to calculate your CO₂ emissions</p>
+    </div>
+</div>
+
+{% if calculation_result %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <h4 class="alert-heading">
+        <i class="fas fa-check-circle"></i> Calculation Complete!
+    </h4>
+    <p class="mb-3">You emitted <strong>{{ "%.2f"|format(calculation_result) }} kg CO₂</strong> from today's activities.</p>
+    <div class="mt-2">
+        <i class="fas fa-seedling text-success"></i>
+        To offset this, you would need approximately 
+        <strong>{{ trees_needed }}</strong> trees (each absorbs ~{{ tree_absorption }} kg CO₂/year).
+    </div>
+    
+    {% if activities %}
+    <hr>
+    <h6>Activities Logged:</h6>
+    <ul class="mb-0">
+        {% for activity in activities %}
+        <li>{{ activity }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endif %}
+
+<form method="POST" id="calculatorForm">
+    <div class="row g-4">
+        <!-- Transportation Section -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-car"></i> Transportation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="transport_mode" class="form-label">Mode of Transport</label>
+                        <select class="form-select" id="transport_mode" name="transport_mode">
+                            <option value="">Select transport mode</option>
+                            <option value="car">🚗 Car (0.24 kg CO₂/km)</option>
+                            <option value="bus">🚌 Bus (0.08 kg CO₂/km)</option>
+                            <option value="train">🚆 Train (0.04 kg CO₂/km)</option>
+                            <option value="flight">✈️ Flight (0.25 kg CO₂/km)</option>
+                            <option value="motorcycle">🏍️ Motorcycle (0.18 kg CO₂/km)</option>
+                            <option value="bicycle">🚴 Bicycle (0.0 kg CO₂/km)</option>
+                            <option value="walking">🚶 Walking (0.0 kg CO₂/km)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="transport_distance" class="form-label">Distance (km)</label>
+                        <input type="number" class="form-control" id="transport_distance" name="transport_distance" 
+                               min="0" step="0.1" placeholder="Enter distance in kilometers">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Food Section -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-utensils"></i> Food
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="food_type" class="form-label">Food Type</label>
+                        <select class="form-select" id="food_type" name="food_type">
+                            <option value="">Select food type</option>
+                            <option value="meat">🥩 Meat (5.0 kg CO₂/serving)</option>
+                            <option value="dairy">🧀 Dairy (2.5 kg CO₂/serving)</option>
+                            <option value="vegetarian">🥗 Vegetarian (1.2 kg CO₂/serving)</option>
+                            <option value="vegan">🌱 Vegan (0.8 kg CO₂/serving)</option>
+                            <option value="packaged">📦 Packaged Food (3.0 kg CO₂/serving)</option>
+                            <option value="local">🏪 Local Produce (0.5 kg CO₂/serving)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="food_servings" class="form-label">Number of Servings</label>
+                        <input type="number" class="form-control" id="food_servings" name="food_servings" 
+                               min="0" step="0.1" placeholder="Enter number of servings">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Energy Section -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> Energy Usage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="electricity" class="form-label">
+                            <i class="fas fa-lightbulb"></i> Electricity (kWh)
+                        </label>
+                        <input type="number" class="form-control" id="electricity" name="electricity" 
+                               min="0" step="0.1" placeholder="Daily electricity usage in kWh">
+                        <div class="form-text">Factor: 0.92 kg CO₂/kWh</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gas" class="form-label">
+                            <i class="fas fa-fire"></i> Natural Gas (kg)
+                        </label>
+                        <input type="number" class="form-control" id="gas" name="gas" 
+                               min="0" step="0.1" placeholder="Daily gas usage in kg">
+                        <div class="form-text">Factor: 2.3 kg CO₂/kg</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waste Section -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trash"></i> Waste Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="landfill" class="form-label">
+                            <i class="fas fa-dumpster"></i> Landfill Waste (kg)
+                        </label>
+                        <input type="number" class="form-control" id="landfill" name="landfill" 
+                               min="0" step="0.1" placeholder="Waste sent to landfill in kg">
+                        <div class="form-text">Factor: 1.5 kg CO₂/kg</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="recycling" name="recycling">
+                            <label class="form-check-label" for="recycling">
+                                <i class="fas fa-recycle text-success"></i> I recycled today
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="composting" name="composting">
+                            <label class="form-check-label" for="composting">
+                                <i class="fas fa-seedling text-success"></i> I composted organic waste
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-calculator"></i> Calculate My Carbon Footprint
+                    </button>
+                    <p class="mt-3 mb-0 text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        Fill in at least one category to calculate your emissions
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Eco Tips Section -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb text-warning"></i> 
+                    Eco-Friendly Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <i class="fas fa-leaf text-success me-3 mt-1"></i>
+                            <div>
+                                <strong>Transportation:</strong> Use public transport, carpool, or bike for short trips to reduce emissions.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <i class="fas fa-apple-alt text-success me-3 mt-1"></i>
+                            <div>
+                                <strong>Food:</strong> Choose local, seasonal produce and reduce meat consumption.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <i class="fas fa-plug text-success me-3 mt-1"></i>
+                            <div>
+                                <strong>Energy:</strong> Unplug devices when not in use and use energy-efficient appliances.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex">
+                            <i class="fas fa-recycle text-success me-3 mt-1"></i>
+                            <div>
+                                <strong>Waste:</strong> Follow the 3 R's: Reduce, Reuse, and Recycle whenever possible.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation and user experience enhancements
+document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+    const form = e.target;
+    const formData = new FormData(form);
+    let hasData = false;
+    
+    // Check if at least one field has data
+    for (let [key, value] of formData.entries()) {
+        if (value && value.trim() !== '') {
+            hasData = true;
+            break;
+        }
+    }
+    
+    if (!hasData) {
+        e.preventDefault();
+        alert('Please fill in at least one category to calculate your carbon footprint.');
+        return false;
+    }
+});
+
+// Auto-calculate preview (optional enhancement)
+function updatePreview() {
+    // This could show a live preview of emissions as user types
+    // Implementation would go here
+}
+
+// Add event listeners for real-time calculation preview
+document.querySelectorAll('input[type="number"], select').forEach(element => {
+    element.addEventListener('input', updatePreview);
+});
+</script>
+{% endblock %}

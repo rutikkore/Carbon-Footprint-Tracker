@@ -1,0 +1,30 @@
+{
+  "transportation": {
+    "car": 0.24,
+    "bus": 0.08,
+    "train": 0.04,
+    "flight": 0.25,
+    "motorcycle": 0.18,
+    "bicycle": 0.0,
+    "walking": 0.0
+  },
+  "food": {
+    "meat": 5.0,
+    "dairy": 2.5,
+    "vegetarian": 1.2,
+    "vegan": 0.8,
+    "packaged": 3.0,
+    "local": 0.5
+  },
+  "energy": {
+    "electricity": 0.92,
+    "gas": 2.3,
+    "solar": 0.0,
+    "wind": 0.0
+  },
+  "waste": {
+    "landfill": 1.5,
+    "recycling": 0.2,
+    "composting": 0.1
+  }
+}

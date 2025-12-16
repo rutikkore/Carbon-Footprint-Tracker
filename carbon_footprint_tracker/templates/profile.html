@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Carbon Footprint Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6 fw-bold">
+            <i class="fas fa-user text-primary"></i> 
+            My Profile
+        </h1>
+        <p class="lead text-muted">Track your progress and manage your account</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Profile Info -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-circle"></i> Profile Information
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-user-circle text-muted" style="font-size: 5rem;"></i>
+                </div>
+                <h4 class="mb-1">{{ current_user.name }}</h4>
+                <p class="text-muted mb-3">{{ current_user.email }}</p>
+                <p class="text-muted">
+                    <i class="fas fa-calendar-alt"></i> 
+                    Member since {{ current_user.created_at.strftime('%B %Y') }}
+                </p>
+                <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="card mt-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar"></i> Your Impact
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-danger">{{ total_emissions }}</h3>
+                        <small class="text-muted">kg CO₂ Total</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-success">{{ green_score }}</h3>
+                        <small class="text-muted">Green Score</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center mb-3">
+                    <h4 class="text-success mb-0">{{ trees_needed }}</h4>
+                    <small class="text-muted">Trees to Offset ({{ tree_absorption }} kg CO₂/yr)</small>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-warning">{{ badges|length }}</h4>
+                    <small class="text-muted">Badges Earned</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges Section -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy"></i> Achievements & Badges
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if badges %}
+                <div class="row g-3">
+                    {% for badge in badges %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card border-0 bg-light">
+                            <div class="card-body text-center p-3">
+                                {% if 'Gold' in badge.badge_name %}
+                                    <i class="fas fa-medal text-warning mb-2" style="font-size: 2rem;"></i>
+                                {% elif 'Silver' in badge.badge_name %}
+                                    <i class="fas fa-medal text-secondary mb-2" style="font-size: 2rem;"></i>
+                                {% else %}
+                                    <i class="fas fa-medal text-info mb-2" style="font-size: 2rem;"></i>
+                                {% endif %}
+                                <h6 class="card-title">{{ badge.badge_name }}</h6>
+                                <small class="text-muted">
+                                    Earned {{ badge.date_earned.strftime('%b %d, %Y') }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-trophy text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-muted">No badges yet</h5>
+                    <p class="text-muted">Start logging your activities to earn your first badge!</p>
+                    <a href="{{ url_for('calculator') }}" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Log Activities
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity History -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-history"></i> Recent Activity History
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar"></i> Date</th>
+                                <th><i class="fas fa-tags"></i> Category</th>
+                                <th><i class="fas fa-info-circle"></i> Activity</th>
+                                <th><i class="fas fa-smog"></i> CO₂ Emissions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in history %}
+                            <tr>
+                                <td>{{ activity.date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if activity.category == 'Transportation' %}bg-primary
+                                        {% elif activity.category == 'Food' %}bg-success
+                                        {% elif activity.category == 'Energy' %}bg-warning text-dark
+                                        {% else %}bg-danger
+                                        {% endif %}">
+                                        {{ activity.category }}
+                                    </span>
+                                </td>
+                                <td>{{ activity.activity }}</td>
+                                <td>
+                                    <strong>{{ "%.2f"|format(activity.emission_value) }} kg</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('calculator') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Log More Activities
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-clipboard-list text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-muted">No activities logged yet</h5>
+                    <p class="text-muted">Start tracking your carbon footprint by logging your daily activities.</p>
+                    <a href="{{ url_for('calculator') }}" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Start Tracking
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('profile') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Full Name</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ current_user.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
+                        <div class="form-text">Email cannot be changed for security reasons.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password (optional)</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password" minlength="6">
+                        <div class="form-text">Leave blank to keep current password.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add any profile-specific JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus on name field when modal opens
+    const editModal = document.getElementById('editProfileModal');
+    editModal.addEventListener('shown.bs.modal', function() {
+        document.getElementById('name').focus();
+    });
+});
+</script>
+{% endblock %}
